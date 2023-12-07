@@ -1,0 +1,109 @@
+---
+- name: Install Packages on Arch Linux
+  hosts: archdevlite
+  roles:
+    - andrewrothstein.skaffold
+  become: yes
+
+  tasks:
+    - name: Update package cache
+      pacman:
+        update_cache: yes
+
+    - name: Install base-devel package (required for building AUR packages)
+      pacman:
+        name: base-devel
+        state: present
+
+    - name: Install git
+      pacman:
+        name: git
+        state: present
+
+    - name: Install pikaur
+      pacman:
+        name: pikaur
+        state: present
+
+    - name: Download Docker archive
+      get_url:
+        url: "https://download.docker.com/linux/static/stable/x86_64/docker-24.0.7.tgz"
+        dest: "/tmp/docker-24.0.7.tgz"
+
+    - name: Extract Docker archive
+      command: "tar xzvf /tmp/docker-24.0.7.tgz -C /tmp/"
+
+    - name: Move Docker binaries to /usr/bin/
+      command: "cp -rf /tmp/docker/. /usr/bin/"
+      become_user: root
+
+    - name: Create docker group
+      group:
+        name: "docker"
+        state: present
+
+    - name: Add ansible user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Start docker sercvice
+      shell: "dockerd > /dev/null &"
+
+    - name: Verify Docker installation
+      command: "docker run hello-world"
+
+    - name: Insall kubectl
+      pacman:
+        name: kubectl
+        state: present
+
+    - name: Install sops
+      pacman:
+        name: sops
+        state: present
+
+    - name: Install helm
+      pacman:
+        name: helm
+        state: present
+
+    - name: install helm-secrets plugin
+      community.kubernetes.helm_plugin:
+        plugin_path: https://github.com/jkroepke/helm-secrets
+        state: present
+
+    - name: Install k9s
+      pacman:
+        name: k9s
+        state: present
+
+    - name: Install azure-cli
+      aur: name=azure-cli user="{{ ansible_user }}"
+
+    - name: Install kubelogin
+      aur: name=kubelogin user="{{ ansible_user }}"
+
+    - name: Install aws-cli
+      pacman:
+        name: aws-cli
+        state: present
+
+    - name: Install kube-ps1
+      aur: name=kube-ps1 user="{{ ansible_user }}"
+
+    - name: Install kubectx
+      pacman:
+        name: kubectx
+        state: present
+
+    - name: Install kubens
+      pacman:
+        name: kubens
+        state: present
+
+    - name: Install tmux
+      pacman:
+        name: tmux
+        state: present
